@@ -37,13 +37,13 @@ import time
 
 basestring = str
 
-OP_RETURN_BITCOIN_IP = 'localhost' 
+OP_RETURN_BITCOIN_IP = '10.0.0.19' 
 OP_RETURN_BITCOIN_PORT = '44555' 
 OP_RETURN_BITCOIN_USER = 'dave'  
 OP_RETURN_BITCOIN_PASSWORD = 'password'  
 OP_RETURN_BTC_FEE = 1 
 OP_RETURN_BTC_DUST = 0.00001 
-OP_RETURN_MAX_BYTES = 24500
+#OP_RETURN_MAX_BYTES = 24500
 OP_RETURN_MAX_BLOCKS = 10  
 OP_RETURN_NET_TIMEOUT = 10  
 SAT = 100000000  
@@ -65,8 +65,6 @@ def OP_RETURN_send(*args):
 
     inputs_spend = OP_RETURN_select_inputs(output_amount, testnet)
 
-    if len(message) > OP_RETURN_MAX_BYTES:
-        return {'error': 'input too large'}
 
     if 'error' in inputs_spend:
         return {'error': inputs_spend['error']}
@@ -151,7 +149,7 @@ def OP_RETURN_create_txn(inputs, outputs, message, metadata_pos, testnet):
 
     txn_unpacked = OP_RETURN_unpack_txn(OP_RETURN_hex_to_bin(raw_txn))
 
-    x=100
+    x = 80
     res=[message[y-x:y] for y in range(x, len(message)+x,x)]
     pos = 2
 
@@ -560,11 +558,11 @@ def OP_RETURN_pack_txn(txn):
 
 def OP_RETURN_pack_varint(integer):
     if integer > 0xFFFFFFFF:
-        packed = "\xFF" + OP_RETURN_pack_uint64(integer)
+        packed = b"\xFF" + OP_RETURN_pack_uint64(integer)
     elif integer > 0xFFFF:
-        packed = "\xFE" + struct.pack('<L', integer)
+        packed = b"\xFE" + struct.pack('<L', integer)
     elif integer > 0xFC:
-        packed = "\xFD".struct.pack('<H', integer)
+        packed = b"\xFD" + struct.pack('<H', integer)
     else:
         packed = struct.pack('B', integer)
 
@@ -628,7 +626,6 @@ def OP_RETURN_hex_to_bin(hex):
     except Exception as e:
         print(e)
         return None
-
     return raw
 
 
