@@ -813,8 +813,10 @@ pub async fn op_return_send(ctx: &Context, msg: &Message, args: Args) -> Command
         msg.reply(ctx, format!("no input")).await?;
         Ok(())
     }else{      
-        let tx_hash = op_return::send(String::from(message), None, None, None).unwrap();
-        msg.reply(ctx, format!("tx: {}\n [view transaction in explorer]({})", &tx_hash, format!("https://sochain.com/tx/DOGETEST/{}", &tx_hash))).await?;
+        match op_return::send(String::from(message), None, None, None).(){
+            Ok(tx_hash) => msg.reply(ctx, format!("tx: {}\n [view transaction in explorer]({})", &tx_hash, format!("https://sochain.com/tx/DOGETEST/{}", &tx_hash))).await?,
+            Err(e) => msg.reply(ctx, format!("error sending message, try again later")).await?
+        };
         Ok(())
     }
 }
