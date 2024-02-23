@@ -13,7 +13,7 @@ use rusqlite::{Connection, Result};
 use serenity::async_trait;
 use serenity::framework::standard::macros::{command, group, help, hook};
 use serenity::framework::standard::{
-    buckets, help_commands, Args, BucketBuilder, CommandGroup, CommandResult, Configuration, DispatchError, HelpOptions, StandardFramework
+    help_commands, Args, BucketBuilder, CommandGroup, CommandResult, Configuration, DispatchError, HelpOptions, StandardFramework
 };
 use serenity::gateway::ShardManager;
 use serenity::http::Http;
@@ -24,19 +24,14 @@ use serenity::prelude::*;
 use serenity::futures::future::BoxFuture;
 use serenity::FutureExt;
 use serenity::all::MessageBuilder;
-use serenity::builder::{CreateAttachment, CreateEmbed, CreateEmbedFooter, CreateMessage};
-use serenity::model::Timestamp;
+use serenity::builder::CreateMessage;
 use serenity::builder::{
     CreateButton,
     CreateInteractionResponse,
     CreateInteractionResponseMessage,
-    CreateSelectMenu,
-    CreateSelectMenuKind,
-    CreateSelectMenuOption,
 };
 use serenity::client::{Context, EventHandler};
 use serenity::futures::StreamExt;
-use serenity::model::prelude::*;
 
 
 #[allow(deprecated)]
@@ -813,7 +808,7 @@ pub async fn op_return_send(ctx: &Context, msg: &Message, args: Args) -> Command
         msg.reply(ctx, format!("no input")).await?;
         Ok(())
     }else{      
-        match op_return::send(String::from(message), None, None, None).(){
+        match op_return::send(String::from(message), None, None, None){
             Ok(tx_hash) => msg.reply(ctx, format!("tx: {}\n [view transaction in explorer]({})", &tx_hash, format!("https://sochain.com/tx/DOGETEST/{}", &tx_hash))).await?,
             Err(e) => msg.reply(ctx, format!("error sending message, try again later")).await?
         };
