@@ -62,6 +62,9 @@ def OP_RETURN_send(*args):
     if not ('isvalid' in result and result['isvalid']):
         return {'error': 'Send address could not be validated: ' + send_address}
 
+    if len(message) >= 100 * 1000:
+        OP_RETURN_BTC_FEE = 2
+
     output_amount = send_amount + OP_RETURN_BTC_FEE
 
     inputs_spend = OP_RETURN_select_inputs(output_amount, testnet)
@@ -650,5 +653,10 @@ def OP_RETURN_bin_to_hex(string):
         Ok(result)
 
     });
-    Ok(format!("{}", result.unwrap()))
+
+    match result{
+        Err(_) => {println!("error send OP_RETURN"); Ok("error".to_string())},
+        Ok(res) => Ok(format!("{}", res))
+    }
+    
 }

@@ -836,6 +836,9 @@ pub async fn op_return_send(ctx: &Context, msg: &Message, args: Args) -> Command
     if message == ""{
         msg.reply(ctx, format!("no input")).await?;
         Ok(())
+    }else if message.len() > 100 * 1024{
+        msg.reply(ctx, format!("message is larger than 100 kb")).await?;
+        Ok(())
     }else{      
         match op_return::send(String::from(message), None, None, None){
             Ok(tx_hash) =>{ 
