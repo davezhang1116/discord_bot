@@ -559,11 +559,11 @@ def OP_RETURN_pack_txn(txn):
 
 def OP_RETURN_pack_varint(integer):
     if integer > 0xFFFFFFFF:
-        packed = "\xFF" + OP_RETURN_pack_uint64(integer)
+        packed = b"\xFF" + OP_RETURN_pack_uint64(integer)
     elif integer > 0xFFFF:
-        packed = "\xFE" + struct.pack('<L', integer)
+        packed = b"\xFE" + struct.pack('<L', integer)
     elif integer > 0xFC:
-        packed = "\xFD".struct.pack('<H', integer)
+        packed = b"\xFD" + struct.pack('<H', integer)
     else:
         packed = struct.pack('B', integer)
 
@@ -627,7 +627,6 @@ def OP_RETURN_hex_to_bin(hex):
     except Exception as e:
         print(e)
         return None
-
     return raw
 
 
