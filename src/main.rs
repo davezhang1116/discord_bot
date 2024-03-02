@@ -1,6 +1,3 @@
-
-
-
 use xml::reader::get_data;
 use lazy_static::lazy_static;
 
@@ -94,8 +91,6 @@ struct Gambling;
 #[description = "OP_RETURN"]
 #[allow(non_camel_case_types)]
 struct OP_RETURN;
-
-
 
 #[help]
 #[individual_command_tip = "Hello! This is a dogecoin tipping bot that enables you to send, store and bet your TESTNET dogecoins. \nYou can find detailed usages by using !help <command>"]
@@ -272,14 +267,22 @@ If you send to the same address twice or too late, you will not be credited.
 DO NOT DEPOSIT MAINNET DOGECOIN, YOU WILL LOSE YOUR FUND."#)]
 
 async fn deposit(ctx: &Context, msg: &Message) -> CommandResult{
-    let address: String = lib::get_new_address().await;
+    let address: String = match lib::get_new_address().await{
+        Ok(address)=>{address},
+        Err(_) => String::from("error")
+    };
+
+    if address.clone() == String::from("error"){
+        msg.channel_id.say(&ctx.http, "error generating address").await?;
+        return Ok(());
+    }
     msg.channel_id.say(&ctx.http, &address.clone()).await?;
     msg.channel_id.say(&ctx.http, "This address will expire in 5 minutes. It can only be used once.").await?;
 
     let mut status: bool = false;
     for _i in 0..500{
         std::thread::sleep(std::time::Duration::from_millis(1000));
-        let amount: f64 = lib::get_received_amount(address.clone()).await;
+        let amount: f64 = lib::get_received_amount(address.clone()).await?;
         if amount != 0.0{
             let conn: Connection = Connection::open(&*FILE).unwrap();
             
@@ -330,7 +333,17 @@ async fn send(ctx: &Context, msg: &Message, args: Args) -> CommandResult{
             if BitcoinAddress::<DogecoinTestnet>::is_valid(account) {
                 if amount >= 10.0 {
                     if amount <= amount_owned{
-                        let tx_hash: String = lib::send(account.to_string(), amount).await;
+
+                        let tx_hash: String = match lib::send(account.to_string(), amount).await{
+                            Ok(tx_hash)=>{tx_hash},
+                            Err(_) => String::from("error")
+                        };
+
+                        if tx_hash.clone() == String::from("error"){
+                            msg.channel_id.say(&ctx.http, "error sending coins").await?;
+                            return Ok(());
+                        }
+
                         if tx_hash.len() == 64{
                             msg.reply(ctx, format!("tx: {}\n [view transaction in explorer]({})", &tx_hash, format!("https://sochain.com/tx/DOGETEST/{}", &tx_hash))).await?;
                             let conn: Connection = Connection::open(&*FILE).unwrap();

@@ -1,36 +1,34 @@
 
 use serde_json::json;
 use serde_json::Value;
+use std::time::Duration;
 use crate::xml::reader::get_data;
 
-
-//const URL : &str = "http://dave:password@localhost:44555/";
 fn get_url() -> String{
     let data = get_data();
     format!("http://{}:{}@{}:{}/", data.username, data.password, data.url, data.port)
 }
 
-pub async fn get_new_address() -> String{
+pub async fn get_new_address() -> Result<String, reqwest::Error> {
     let client = reqwest::Client::new();
     let map = json!({
         "method": "getnewaddress"
     });
     let req =client
         .post(get_url())
+        .timeout(Duration::from_secs(2))
         .json(&map)
         .send()
-        .await
-        .unwrap()
+        .await?
         .text()
-        .await
-        .unwrap();
+        .await?;
     let data = serde_json::from_str::<Value>(&req).unwrap();
     let res = data["result"].clone();
     let addr = res.as_str().unwrap_or("address generation failed");
-    addr.to_string()
+    Ok(addr.to_string())
 }
 
-pub async fn get_received_amount(address: String) -> f64{
+pub async fn get_received_amount(address: String) -> Result<f64, reqwest::Error>{
     let client = reqwest::Client::new();
     let map = json!({
         "method": "listunspent",
@@ -38,21 +36,20 @@ pub async fn get_received_amount(address: String) -> f64{
     });
     let req =client
         .post(get_url())
+        .timeout(Duration::from_secs(2))
         .json(&map)
         .send()
-        .await
-        .unwrap()
+        .await?
         .text()
-        .await
-        .unwrap();
+        .await?;
     let data = serde_json::from_str::<Value>(&req).unwrap();
     
     let r = data["result"][0]["amount"].clone();
     let amt = r.as_f64().unwrap_or(0.0);
-    amt
+    Ok(amt)
 }
 
-pub async fn send(address: String, amt: f64) -> String{
+pub async fn send(address: String, amt: f64) -> Result<String, reqwest::Error>{
     let client = reqwest::Client::new();
     let map = json!({
         "method": "sendtoaddress",
@@ -62,15 +59,14 @@ pub async fn send(address: String, amt: f64) -> String{
     println!("{:?}",&map);
     let req =client
         .post(get_url())
+        .timeout(Duration::from_secs(2))
         .json(&map)
         .send()
-        .await
-        .unwrap()
+        .await?
         .text()
-        .await
-        .unwrap();
+        .await?;
     let data = serde_json::from_str::<Value>(&req).unwrap();
     let res = data["result"].clone();
     let txid = res.as_str().unwrap_or("error! try again");
-    txid.to_string()
+    Ok(txid.to_string())
 }
