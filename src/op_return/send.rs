@@ -1,5 +1,6 @@
 use pyo3::prelude::*;
 use pyo3::types::PyTuple;
+use crate::xml::reader::get_data;
 
 // NOTE
 // python code adapted from https://github.com/INCT-DD/dogecoin-OP_RETURN
@@ -21,10 +22,19 @@ pub fn send(
     let arg4 = &testnet.unwrap_or(String::from("1"));
 
     let result: Result<Py<PyAny>, PyErr> = Python::with_gil(|py: Python<'_>| {
-        let fun: Py<PyAny> = PyModule::from_code(
-            py,
-            
-r#"from string import hexdigits
+        let data = get_data();
+        let config = format!(
+"OP_RETURN_BITCOIN_IP = '{0}' 
+OP_RETURN_BITCOIN_PORT = '{1}' 
+OP_RETURN_BITCOIN_USER = '{2}'  
+OP_RETURN_BITCOIN_PASSWORD = '{3}'  
+OP_RETURN_BTC_FEE = 1 
+OP_RETURN_BTC_DUST = 0.00001 
+OP_RETURN_MAX_BYTES = 30000
+OP_RETURN_MAX_BLOCKS = 10  
+OP_RETURN_NET_TIMEOUT = 10  
+SAT = 100000000", data.url, data.port, data.username, data.password);
+        let code = r#"from string import hexdigits
 import codecs
 import binascii
 import hashlib
@@ -37,16 +47,7 @@ import time
 
 basestring = str
 
-OP_RETURN_BITCOIN_IP = '10.0.0.19' 
-OP_RETURN_BITCOIN_PORT = '44555' 
-OP_RETURN_BITCOIN_USER = 'dave'  
-OP_RETURN_BITCOIN_PASSWORD = 'password'  
-OP_RETURN_BTC_FEE = 1 
-OP_RETURN_BTC_DUST = 0.00001 
-#OP_RETURN_MAX_BYTES = 24500
-OP_RETURN_MAX_BLOCKS = 10  
-OP_RETURN_NET_TIMEOUT = 10  
-SAT = 100000000  
+
 
 
 #def OP_RETURN_send(send_address, send_amount, message, testnet=False):
@@ -65,6 +66,8 @@ def OP_RETURN_send(*args):
 
     inputs_spend = OP_RETURN_select_inputs(output_amount, testnet)
 
+    if len(message) > OP_RETURN_MAX_BYTES:
+        return {'error': 'input too large'}
 
     if 'error' in inputs_spend:
         return {'error': inputs_spend['error']}
@@ -149,7 +152,7 @@ def OP_RETURN_create_txn(inputs, outputs, message, metadata_pos, testnet):
 
     txn_unpacked = OP_RETURN_unpack_txn(OP_RETURN_hex_to_bin(raw_txn))
 
-    x = 80
+    x=100
     res=[message[y-x:y] for y in range(x, len(message)+x,x)]
     pos = 2
 
@@ -558,11 +561,11 @@ def OP_RETURN_pack_txn(txn):
 
 def OP_RETURN_pack_varint(integer):
     if integer > 0xFFFFFFFF:
-        packed = b"\xFF" + OP_RETURN_pack_uint64(integer)
+        packed = "\xFF" + OP_RETURN_pack_uint64(integer)
     elif integer > 0xFFFF:
-        packed = b"\xFE" + struct.pack('<L', integer)
+        packed = "\xFE" + struct.pack('<L', integer)
     elif integer > 0xFC:
-        packed = b"\xFD" + struct.pack('<H', integer)
+        packed = "\xFD".struct.pack('<H', integer)
     else:
         packed = struct.pack('B', integer)
 
@@ -626,12 +629,18 @@ def OP_RETURN_hex_to_bin(hex):
     except Exception as e:
         print(e)
         return None
+
     return raw
 
 
 def OP_RETURN_bin_to_hex(string):
     return binascii.b2a_hex(string).decode('utf-8')
-"#,
+"#;
+
+
+        let fun: Py<PyAny> = PyModule::from_code(
+            py,
+            format!("{}\n{}", config, code).as_str(),
             "",
             "",
         )?

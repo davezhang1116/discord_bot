@@ -1,16 +1,22 @@
 
 use serde_json::json;
 use serde_json::Value;
+use crate::xml::reader::get_data;
+use once_cell::sync::Lazy;
 
-const URL : &str = "http://dave:password@localhost:44555/";
-
+//const URL : &str = "http://dave:password@localhost:44555/";
+fn get_url() -> String{
+    let data = get_data();
+    println!("{:?}", data);
+    format!("http://{}:{}@{}:{}/", data.username, data.password, data.url, data.port)
+}
 pub async fn get_new_address() -> String{
     let client = reqwest::Client::new();
     let map = json!({
         "method": "getnewaddress"
     });
     let req =client
-        .post(URL)
+        .post(get_url())
         .json(&map)
         .send()
         .await
@@ -31,7 +37,7 @@ pub async fn get_received_amount(address: String) -> f64{
         "params": [1, 10000, [address]]
     });
     let req =client
-        .post(URL)
+        .post(get_url())
         .json(&map)
         .send()
         .await
@@ -54,8 +60,9 @@ pub async fn send(address: String, amt: f64) -> String{
     });
 
     println!("{:?}",&map);
+    println!("{}", get_url());
     let req =client
-        .post(URL)
+        .post(get_url())
         .json(&map)
         .send()
         .await
