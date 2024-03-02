@@ -28,7 +28,7 @@ pub fn send(
 OP_RETURN_BITCOIN_PORT = '{1}' 
 OP_RETURN_BITCOIN_USER = '{2}'  
 OP_RETURN_BITCOIN_PASSWORD = '{3}'  
-OP_RETURN_BTC_FEE = 2
+OP_RETURN_BTC_FEE = 1
 OP_RETURN_BTC_DUST = 0.00001 
 OP_RETURN_MAX_BYTES = 30000
 OP_RETURN_MAX_BLOCKS = 10  
@@ -44,11 +44,9 @@ import random
 import re
 import struct
 import time
+import math
 
 basestring = str
-
-
-
 
 #def OP_RETURN_send(send_address, send_amount, message, testnet=False):
 def OP_RETURN_send(*args):
@@ -78,7 +76,7 @@ def OP_RETURN_send(*args):
     outputs = {send_address: send_amount}
 
     if change_amount >= OP_RETURN_BTC_DUST:
-        outputs[change_address] = change_amount
+        outputs[change_address] = math.floor(change_amount)
 
     raw_txn = OP_RETURN_create_txn(inputs_spend['inputs'], outputs, message, len(outputs), testnet)
 
