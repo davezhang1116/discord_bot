@@ -66,8 +66,6 @@ def OP_RETURN_send(*args):
 
     inputs_spend = OP_RETURN_select_inputs(output_amount, testnet)
 
-    if len(message) > OP_RETURN_MAX_BYTES:
-        return {'error': 'input too large'}
 
     if 'error' in inputs_spend:
         return {'error': inputs_spend['error']}
@@ -152,7 +150,7 @@ def OP_RETURN_create_txn(inputs, outputs, message, metadata_pos, testnet):
 
     txn_unpacked = OP_RETURN_unpack_txn(OP_RETURN_hex_to_bin(raw_txn))
 
-    x=100
+    x = 80
     res=[message[y-x:y] for y in range(x, len(message)+x,x)]
     pos = 2
 
