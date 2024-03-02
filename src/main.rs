@@ -1,5 +1,13 @@
 
-const TOKEN:&str =  "MTE4NTIyMDAxNzkyNzc2MTkzMQ.GsfgPE.Yah84AE4Swojcu6MBgjdwSP-2AthVO9hkFQ5BE";
+
+
+use xml::reader::get_data;
+use lazy_static::lazy_static;
+
+lazy_static! {
+    static ref FILE: String = get_data().database.clone();
+    static ref TOKEN: String =  get_data().token.clone();
+}
 
 use std::collections::{HashMap, HashSet};
 use std::fmt::Write;
@@ -47,6 +55,8 @@ mod lib;
 #[path = "./op_return/send.rs"]
 mod op_return;
 
+pub mod xml;
+
 struct ShardManagerContainer;
 
 impl TypeMapKey for ShardManagerContainer {
@@ -82,6 +92,7 @@ struct Gambling;
 #[group]
 #[commands(op_return_send)]
 #[description = "OP_RETURN"]
+#[allow(non_camel_case_types)]
 struct OP_RETURN;
 
 
@@ -146,7 +157,6 @@ async fn delay_action(ctx: &Context, msg: &Message) {
 #[hook]
 async fn dispatch_error(ctx: &Context, msg: &Message, error: DispatchError, _command_name: &str) {
     if let DispatchError::Ratelimited(info) = error {
-        // We notify them only once.
         if info.is_first_try {
             let _ = msg
                 .channel_id
@@ -178,7 +188,7 @@ fn _dispatch_error_no_macro<'fut>(
 
 #[tokio::main]
 async fn main() {
-    let http: Http = Http::new(&TOKEN);
+    let http: Http = Http::new(&*TOKEN);
     let (owners, bot_id) = match http.get_current_application_info().await {
         Ok(info) => {
             let mut owners = HashSet::new();
@@ -216,7 +226,7 @@ async fn main() {
             .owners(owners),
     );
     let intents: GatewayIntents = GatewayIntents::all();
-    let mut client: Client = Client::builder(&TOKEN, intents)
+    let mut client: Client = Client::builder(&*TOKEN, intents)
         .event_handler(Handler)
         .framework(framework)
         .type_map_insert::<CommandCounter>(HashMap::default())
@@ -271,7 +281,7 @@ async fn deposit(ctx: &Context, msg: &Message) -> CommandResult{
         std::thread::sleep(std::time::Duration::from_millis(1000));
         let amount: f64 = lib::get_received_amount(address.clone()).await;
         if amount != 0.0{
-            let conn: Connection = Connection::open("./data.db").unwrap();
+            let conn: Connection = Connection::open(&*FILE).unwrap();
             
             let sats: f64 = get_balance(&msg.author.name).unwrap_or(0.0);
             if sats != 0.0{
@@ -321,14 +331,20 @@ async fn send(ctx: &Context, msg: &Message, args: Args) -> CommandResult{
                 if amount >= 10.0 {
                     if amount <= amount_owned{
                         let tx_hash: String = lib::send(account.to_string(), amount).await;
-                        msg.reply(ctx, format!("tx: {}\n [view transaction in explorer]({})", &tx_hash, format!("https://sochain.com/tx/DOGETEST/{}", &tx_hash))).await?;
-
-                        let conn: Connection = Connection::open("./data.db").unwrap();
+                        if tx_hash.len() == 64{
+                            msg.reply(ctx, format!("tx: {}\n [view transaction in explorer]({})", &tx_hash, format!("https://sochain.com/tx/DOGETEST/{}", &tx_hash))).await?;
+                            let conn: Connection = Connection::open(&*FILE).unwrap();
                         
-                        conn.execute(
-                            &format!("Update balance set sats = {} where name = \"{}\"",
-                            amount_owned - amount - 1.0, &msg.author.name),()
-                        )?;
+                            conn.execute(
+                                &format!("Update balance set sats = {} where name = \"{}\"",
+                                amount_owned - amount - 1.0, &msg.author.name),()
+                            )?;
+                        }else{
+                            msg.reply(ctx, format!("error send coins, try again later")).await?;
+                        }
+                        
+
+                        
                     }else{
                         msg.reply(ctx, format!("not enough balance to send the transaction and pay the transaction fee")).await?;
                     }
@@ -348,7 +364,7 @@ async fn send(ctx: &Context, msg: &Message, args: Args) -> CommandResult{
 
 
 fn get_balance (username:&str) -> Result<f64,>{
-    let conn: Connection = Connection::open("./data.db").unwrap();
+    let conn: Connection = Connection::open(&*FILE).unwrap();
 
     struct Balance{sats: String}
     let mut stmt: rusqlite::Statement<'_> = conn.prepare(&format!("SELECT sats FROM balance where name = \"{}\"", &username))?;
@@ -380,6 +396,7 @@ fn get_balance (username:&str) -> Result<f64,>{
 Note that the amount must be have at most 8 decimal places and you must tip at least 10 coins."#)]
 #[usage("<target user mention> <amount to tip>")]
 #[example("@dave 120")]
+
 async fn tip(ctx: &Context, msg: &Message, args: Args) -> CommandResult{
     let input = args.rest().split(" ").collect::<Vec<&str>>();
     if input.len() != 2{
@@ -392,8 +409,9 @@ async fn tip(ctx: &Context, msg: &Message, args: Args) -> CommandResult{
             if amt >= 10.0{
                 let balance = get_balance(&msg.author.name).unwrap_or(0.0);
                 if  balance> amt.to_string().trim().parse::<f64>().unwrap(){
+                    #[allow(deprecated)]
                     if !parse_username(account).is_none(){
-                        let conn: Connection = Connection::open("./data.db").unwrap();
+                        let conn: Connection = Connection::open(&*FILE).unwrap();
                         let username: &String = &parse_username(account).unwrap().to_user(&ctx.http).await.unwrap().name;
                         let sats: f64 = get_balance(username).unwrap_or(0.0);
                         if sats != 0.0{
@@ -449,7 +467,7 @@ async fn faucet(ctx: &Context, msg: &Message) -> CommandResult{
     let username: &String = &msg.author.name;
     let amt: f64 = 500.0;
     let balance: f64 = get_balance(&msg.author.name).unwrap_or(0.0);
-    let conn: Connection = Connection::open("./data.db").unwrap();
+    let conn: Connection = Connection::open(&*FILE).unwrap();
     if balance != 0.0{
         conn.execute(
             &format!("Update balance set sats = {} where name = \"{}\"",
@@ -505,7 +523,7 @@ pub async fn coinflip(ctx: &Context, msg: &Message, args: Args) -> CommandResult
                             return "down";
                         }
                     };
-                    let conn = Connection::open("./data.db").unwrap();
+                    let conn = Connection::open(&*FILE).unwrap();
                     if bet == side(coin) {
                         msg.reply(ctx, format!("The result is {}, you won {} coins", side(coin), amt)).await?;
                         conn.execute(
@@ -598,7 +616,7 @@ pub async fn mines(ctx: &Context, msg: &Message, args: Args) -> CommandResult{
         multiplier
     };
 
-    let mut bomb_list = vec![];
+    let mut bomb_list: Vec<i32> = vec![];
     loop{
         if bomb_list.len() as i8 == mine{
             break;
@@ -651,9 +669,9 @@ pub async fn mines(ctx: &Context, msg: &Message, args: Args) -> CommandResult{
     let round_numbers = |number: f64| -> f64{
         (format!("{:.02}", number)).trim().parse::<f64>().unwrap()
     };
-
+    #[allow(unused_variables)]
     let edit_balance = |usename: &str, amt: f64|{
-        let conn = Connection::open("./data.db").unwrap();
+        let conn = Connection::open(&*FILE).unwrap();
         conn.execute(
             &format!("Update balance set sats = {} where name = \"{}\"",
             balance + amt, &msg.author.name),()
@@ -773,10 +791,8 @@ pub async fn mines(ctx: &Context, msg: &Message, args: Args) -> CommandResult{
                 )
                 .await
                 .unwrap();
-            
         }
     }
-
     Ok(())
 }
 
@@ -787,7 +803,7 @@ pub async fn mines(ctx: &Context, msg: &Message, args: Args) -> CommandResult{
 #[usage("<your message>")]
 #[example("HELLO WORLD")]
 pub async fn op_return_send(ctx: &Context, msg: &Message, args: Args) -> CommandResult{
-
+    #[allow(unused_assignments)]
     let mut message = String::from("");
 
     let file = &msg.attachments.iter().next();
@@ -809,137 +825,15 @@ pub async fn op_return_send(ctx: &Context, msg: &Message, args: Args) -> Command
         Ok(())
     }else{      
         match op_return::send(String::from(message), None, None, None){
-            Ok(tx_hash) => msg.reply(ctx, format!("tx: {}\n [view transaction in explorer]({})", &tx_hash, format!("https://sochain.com/tx/DOGETEST/{}", &tx_hash))).await?,
-            Err(e) => msg.reply(ctx, format!("error sending message, try again later")).await?
+            Ok(tx_hash) =>{ 
+                if tx_hash.len() == 64{
+                    msg.reply(ctx, format!("tx: {}\n [view transaction in explorer]({})", &tx_hash, format!("https://sochain.com/tx/DOGETEST/{}", &tx_hash))).await?
+                }else{
+                    msg.reply(ctx, format!("error sending message (the size of the message may be too big), try again later")).await?
+                }},
+            Err(_e) => msg.reply(ctx, format!("error sending message, try again later")).await?
         };
         Ok(())
     }
 }
 
-
-
-
-
-/*
-
-#[command]
-#[description(
-    r#"This is a command that performs coinflip. Min bet is 10."#)]
-#[usage("<up or down> <amount to bet>")]
-#[example("up 20")]
-pub async fn dice(ctx: &Context, msg: &Message, args: Args) -> CommandResult{
-    let input = &args.rest().split(" ").collect::<Vec<&str>>();
-    if input.len() != 2 {
-        msg.reply(ctx, format!("invalid input")).await?;
-        return Ok(());
-    }
-    let bet = input[0];
-    let amt = input[1];
-
-    let balance = get_balance(&msg.author.name).unwrap_or(0.0);
-
-    if amt.to_string().trim().parse::<f64>().is_ok(){
-            let amt = amt.to_string().trim().parse::<f64>().unwrap();
-            if amt >= 10.0{
-                
-                if balance < amt{
-                    msg.reply(ctx, format!("Please input a smaller bet. You have {} coins", balance)).await?;
-                    return Ok(());
-                }
-            }else{
-                msg.reply(ctx, format!("Minimum bet is 10")).await?;
-                return Ok(());
-            }
-        }else{
-            msg.reply(ctx, format!("Invalid amount")).await?;
-            return Ok(());
-        }
-    println!("{bet}");
-    if bet.to_string().trim().parse::<i8>().is_ok(){
-        if bet.to_string().trim().parse::<i8>().unwrap() == 0 || bet.to_string().trim().parse::<i8>().unwrap() > 19{
-            msg.reply(ctx, "enter a valid bet1").await?;
-            return Ok(());
-        }
-    }else{
-        msg.reply(ctx, "enter a valid bet").await?;
-        return Ok(());
-    }
-    
-    Ok(())
-}
-
-#[command]
-#[description(
-    r#"This is a command that performs coinflip. Min bet is 10."#)]
-#[usage("<up or down> <amount to bet>")]
-#[example("up 20")]
-pub async fn coinflip(ctx: &Context, msg: &Message, args: Args) -> CommandResult{
-    let m = msg
-            .channel_id
-            .send_message(
-                &ctx,
-                /*CreateMessage::new().content("Please select your bet").select_menu(
-                    CreateSelectMenu::new("bet_select", CreateSelectMenuKind::String {
-                        options: vec![
-                            CreateSelectMenuOption::new("Up", "Up"),
-                            CreateSelectMenuOption::new("Down", "Down")
-                        ],
-                    })
-                    .custom_id("bet_select")
-                    .placeholder("No bet selected"),
-                ),*/
-                CreateMessage::new().content("Please select your bet")
-                    .button(CreateButton::new("up").label("up"))
-                    .button(CreateButton::new("down").label("down"))
-            )
-            .await?;
-
-    let interaction = match m
-        .await_component_interaction(&ctx.shard)
-        .timeout(Duration::from_secs(60 * 3))
-        .await
-    {
-        Some(x) => x,
-        None => {
-            m.reply(&ctx, "Timed out").await.unwrap();
-            return Ok(());
-        },
-    };
-
-    let bet = &interaction.data.custom_id;
-
-    let coin = rand::thread_rng().gen_range(0..2);
-    let side = |coin| {
-        if coin == 1{
-            return "up";
-        }else{
-            return "down";
-        }
-    };
-
-    if bet == side(coin){
-        interaction
-            .create_response(
-                &ctx,
-                CreateInteractionResponse::Message(
-                    CreateInteractionResponseMessage::default()
-                        .ephemeral(true)
-                        .content(format!("You won! The result is {}.", side(coin)))
-                )
-            ).await?;
-    }else{
-        interaction
-            .create_response(
-                &ctx,
-                CreateInteractionResponse::Message(
-                    CreateInteractionResponseMessage::default()
-                        .ephemeral(true)
-                        .content(format!("You lost! The result is {}.",side(coin)))
-                )
-            ).await?;
-    }
-    m.delete(&ctx).await?;
- 
-    Ok(())
-}
-*/
