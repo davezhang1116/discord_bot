@@ -28,7 +28,7 @@ pub fn send(
 OP_RETURN_BITCOIN_PORT = '{1}' 
 OP_RETURN_BITCOIN_USER = '{2}'  
 OP_RETURN_BITCOIN_PASSWORD = '{3}'  
-OP_RETURN_BTC_FEE = 1 
+OP_RETURN_BTC_FEE = 2
 OP_RETURN_BTC_DUST = 0.00001 
 OP_RETURN_MAX_BYTES = 30000
 OP_RETURN_MAX_BLOCKS = 10  
@@ -61,9 +61,6 @@ def OP_RETURN_send(*args):
     result = OP_RETURN_bitcoin_cmd('validateaddress', testnet, send_address)
     if not ('isvalid' in result and result['isvalid']):
         return {'error': 'Send address could not be validated: ' + send_address}
-
-    if len(message) >= 100 * 1000:
-        OP_RETURN_BTC_FEE = 2
 
     output_amount = send_amount + OP_RETURN_BTC_FEE
 
@@ -655,7 +652,7 @@ def OP_RETURN_bin_to_hex(string):
     });
 
     match result{
-        Err(_) => {println!("error send OP_RETURN"); Ok("error".to_string())},
+        Err(e) => {println!("{:?}", e); Ok("error".to_string())},
         Ok(res) => Ok(format!("{}", res))
     }
     
