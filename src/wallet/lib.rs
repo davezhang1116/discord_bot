@@ -4,12 +4,16 @@ use serde_json::Value;
 use std::time::Duration;
 use crate::xml::reader::get_data;
 
+// these methods interact with rpc methods from dogecoin core
+// dogecoin rpc documentation link: https://github.com/dogecoin/dogecoin/blob/master/doc/getting-started.md
+
 fn get_url() -> String{
     let data = get_data();
-    format!("http://{}:{}@{}:{}/", data.username, data.password, data.url, data.port)
+    format!("http://{}:{}@{}:{}/", data.username, data.password, data.url, data.port) // Generating a string http address
 }
 
 pub async fn get_new_address() -> Result<String, reqwest::Error> {
+    // this function generates a new dogecoin address
     let client = reqwest::Client::new();
     let map = json!({
         "method": "getnewaddress"
@@ -29,6 +33,8 @@ pub async fn get_new_address() -> Result<String, reqwest::Error> {
 }
 
 pub async fn get_received_amount(address: String) -> Result<f64, reqwest::Error>{
+    // this function checks the amount received from the transaction id 
+    // it will only scan through confirmed transactions
     let client = reqwest::Client::new();
     let map = json!({
         "method": "listunspent",
@@ -50,6 +56,7 @@ pub async fn get_received_amount(address: String) -> Result<f64, reqwest::Error>
 }
 
 pub async fn send(address: String, amt: f64) -> Result<String, reqwest::Error>{
+    // this function sends dogecoin token to external addresses
     let client = reqwest::Client::new();
     let map = json!({
         "method": "sendtoaddress",

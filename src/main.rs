@@ -1,8 +1,9 @@
 use xml::reader::get_data;
 use lazy_static::lazy_static;
 
+// define static constants
 lazy_static! {
-    static ref FILE: String = get_data().database.clone();
+    static ref FILE: String = get_data().database.clone(); 
     static ref TOKEN: String =  get_data().token.clone();
 }
 
@@ -812,42 +813,42 @@ pub async fn mines(ctx: &Context, msg: &Message, args: Args) -> CommandResult{
 
 #[command]
 #[description(
-    r#"INPUT YOUR MESSAGE"#)]
+    r#"Save your message on dogecoin network. You may check your messages on the block explorer or through network nodes. You may only use utf-8 characters."#)]
 #[usage("<your message>")]
 #[example("HELLO WORLD")]
 pub async fn op_return_send(ctx: &Context, msg: &Message, args: Args) -> CommandResult{
     #[allow(unused_assignments)]
     let mut message = String::from("");
 
-    let file = &msg.attachments.iter().next();
-    if args.rest() == "" && file.is_some() && file.unwrap().content_type == Some(String::from("text/plain; charset=utf-8")){
+    let file = &msg.attachments.iter().next(); // get the txt file url
 
+    if args.rest() == "" && file.is_some() && file.unwrap().content_type == Some(String::from("text/plain; charset=utf-8")){
             let body = reqwest::get(&file.unwrap().url)
                 .await
                 .unwrap()
                 .text()
                 .await
                 .unwrap();
-            message = format!("{}", body);
+            message = format!("{}", body); // stream the txt file from discord
     }else{
-        message = String::from(args.rest());
+        message = String::from(args.rest()); // if there is no file, then read the text
     }
 
     if message == ""{
-        msg.reply(ctx, format!("no input")).await?;
+        msg.reply(ctx, format!("no input")).await?; // reply no input if there is no input or file
         Ok(())
     }else if message.len() > 100 * 1024{
-        msg.reply(ctx, format!("message is larger than 100 kb")).await?;
+        msg.reply(ctx, format!("message is larger than 100 kb")).await?; 
         Ok(())
     }else{      
         match op_return::send(String::from(message), None, None, None){
             Ok(tx_hash) =>{ 
                 if tx_hash.len() == 64{
-                    msg.reply(ctx, format!("tx: {}\n [view transaction in explorer]({})", &tx_hash, format!("https://sochain.com/tx/DOGETEST/{}", &tx_hash))).await?
+                    msg.reply(ctx, format!("tx: {}\n [view transaction in explorer]({})", &tx_hash, format!("https://sochain.com/tx/DOGETEST/{}", &tx_hash))).await? // return the explorer link
                 }else{
-                    msg.reply(ctx, format!("error sending message (the size of the message may be too big), try again later")).await?
+                    msg.reply(ctx, format!("The backend returned an error. The size of the message may be too big or the backend is not operational. Try again later!")).await? // error if node returns an error json
                 }},
-            Err(_e) => msg.reply(ctx, format!("error sending message, try again later")).await?
+            Err(_e) => msg.reply(ctx, format!("Unknown Error. Try again later.")).await? // return error if the tx creation failed
         };
         Ok(())
     }
