@@ -8,8 +8,9 @@ use crate::xml::reader::get_data;
 // dogecoin rpc documentation link: https://github.com/dogecoin/dogecoin/blob/master/doc/getting-started.md
 
 fn get_url() -> String{
+    // Generating a string http address from the config file
     let data = get_data();
-    format!("http://{}:{}@{}:{}/", data.username, data.password, data.url, data.port) // Generating a string http address
+    format!("http://{}:{}@{}:{}/", data.username, data.password, data.url, data.port) 
 }
 
 pub async fn get_new_address() -> Result<String, reqwest::Error> {

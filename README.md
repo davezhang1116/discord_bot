@@ -8,6 +8,10 @@ In order to build this program, you will need a Rust compiler (I am using rustc 
 
 Rust official installation page: https://www.rust-lang.org/tools/install
 
+And Python (I am use python 3.10)
+
+Python download page: https://www.python.org/downloads/
+
 You will also need to set up a Dogecoin Testnet Node
 
 Dogecoin Core Github page: https://github.com/dogecoin/dogecoin
@@ -24,12 +28,9 @@ Run
 
 ```cargo run --release```
 
-## Known problems
-
-When you are compiling [libsqlite3-sys](https://crates.io/crates/libsqlite3-sys), you may need to install the C binding first. The project's Github repo is https://github.com/rusqlite/rusqlite/.
-
-
 ## Example Dogecoin Core Config
+
+```~/.dogecoin/dogecoin.conf```
 
 ```
 testnet=1
@@ -43,4 +44,14 @@ rpcport=44555
 rpcconnect=127.0.0.1
 disablesafemode=1
 ```
+## Sqlite
 
+When you are compiling [libsqlite3-sys](https://crates.io/crates/libsqlite3-sys), you may need to install the C binding first. The project's Github repo is https://github.com/rusqlite/rusqlite/.
+
+The schema for the database is 
+``` 
+CREATE TABLE balance( 
+    id primary key not null, 
+    name TEXT not null, 
+    sats TEXT);
+```

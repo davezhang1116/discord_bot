@@ -16,6 +16,7 @@ pub fn send(
     amount: Option<String>,
     testnet: Option<String>
 ) -> Result<String, ()> {
+    // this function uses a Python binding to send a op_return message
     let arg1 = &address.unwrap_or(String::from("nq98cmMzxSAxjGH1wLMCYMjTkmEkaV4gP1"));
     let arg2 = &amount.unwrap_or(String::from("0.001"));
     let arg3 = &message;
