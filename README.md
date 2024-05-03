@@ -16,8 +16,10 @@ You will also need to set up a Dogecoin Testnet Node
 
 Dogecoin Core Github page: https://github.com/dogecoin/dogecoin
 
+You may follow this page to get a discord token: https://www.writebots.com/discord-bot-token/
+
 ## Configuration
-You will need to create a username and a password on your ```dogecoin.conf``` and copy the auth data to the ```file.xml```. You may need to update the node ip address. Note: you may run into trouble if you decide to use a remote node because of firewall setting on the system or the dogecoin core.
+You will need to create a username and a password on your ```dogecoin.conf``` and copy the auth data (bot token) to the ```file.xml```. You may need to update the node ip address. Note: you may run into trouble if you decide to use a remote node because of firewall settings on the system or the dogecoin core.
 
 ## Building and running the program
 Build
@@ -72,3 +74,55 @@ Serenity: https://github.com/serenity-rs/serenity
 PyO3: https://github.com/PyO3/pyo3
 
 You may view all dependencies in ```Cargo.toml```
+
+## Usage Help
+
+Send coins
+
+```
+!send <testnet dogecoin address> <amount to send>
+!send nZ6oQPaD4NyuhF2pyMCU2Ju3oeTWitz4Xs 102.0
+```
+
+Deposit coins
+
+```
+!deposit
+```
+
+Tip coins
+
+```
+!tip <target user mention> <amount to tip>
+!tip @dave 120
+```
+
+Faucet (to get free coins)
+
+```!faucet```
+
+Balance (get your balance)
+
+```!balance```
+
+Coinflip
+
+```
+!coinflip <up or down> <amount to bet>
+!coinflip up 20
+```
+
+Mines
+
+```
+!mines <amount of mines> <amount to bet>
+!mines 5 20
+```
+
+OP_return Message
+
+```
+!op_return_send <your message>
+!op_return_send HELLO WORLD
+```
+You can also attach an utf-8 encoded file (<100kb). The data will be recorded on the blockchain. You may view your data on a block explorer.
