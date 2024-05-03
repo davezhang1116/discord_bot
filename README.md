@@ -44,6 +44,7 @@ rpcport=44555
 rpcconnect=127.0.0.1
 disablesafemode=1
 ```
+
 ## Sqlite
 
 When you are compiling [libsqlite3-sys](https://crates.io/crates/libsqlite3-sys), you may need to install the C binding first. The project's Github repo is https://github.com/rusqlite/rusqlite/.
@@ -55,3 +56,19 @@ CREATE TABLE balance(
     name TEXT not null, 
     sats TEXT);
 ```
+
+## libsecp256k1
+
+You may need at least 4GB of RAM to compile this library. [github link](https://github.com/paritytech/libsecp256k1/issues/94)
+
+
+## Dependencies and Repos
+dogecoin-OP_RETURN: https://github.com/INCT-DD/dogecoin-OP_RETURN
+
+anychain: https://github.com/0xcregis/anychain
+
+Serenity: https://github.com/serenity-rs/serenity
+
+PyO3: https://github.com/PyO3/pyo3
+
+You may view all dependencies in ```Cargo.toml```
